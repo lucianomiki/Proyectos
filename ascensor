@@ -1,0 +1,219 @@
+//link de tinkercad: https://www.tinkercad.com/things/1410QbYulG0-copy-of-ascensor?sharecode=lxWdpLT3StMAUkQz19h_Sjq3xV_kQfkP1KpLjfVT5B8
+
+//codigo:
+// Declaraciones iniciales
+  int pisoactual = -1;
+  bool movimientoEnProgreso = false;
+
+  // Pines de los botones fijos (de piso)
+    const int P1 = 2; 
+    const int P2 = 4;
+    const int P3 = 5;
+
+  // Pines de los botones de la cabina
+    const int CP1 = 8;
+    const int CP2 = 12;
+    const int CP3 = 13;
+
+  // Pines de los sensores de piso
+    const int S1 = 7;
+    const int S2 = 10;
+    const int S3 = 11;
+
+  // Pines de los LEDs
+    const int LV = 3; // Verde
+    const int LA = 6; // Amarillo
+    const int LR = 9; // Rojo
+
+  // Puentes H
+    const int T1 = A0; 
+    const int T2 = A1;
+
+  // Delay sin pausa
+    unsigned long tiempoAnterior = 0;
+    unsigned long intervaloParpadeo = 200;
+
+//funciones
+  // Funciones de control del motor/puenteH
+    void bajar() {
+      movimientoEnProgreso = true; // Establecer la bandera de movimiento en verdadero
+      digitalWrite(T1, HIGH);
+      digitalWrite(T2, LOW);
+    }
+    void subir() {
+      movimientoEnProgreso = true; // Establecer la bandera de movimiento en verdadero
+      digitalWrite(T1, LOW);
+      digitalWrite(T2, HIGH);
+    }
+    void detener() {
+      movimientoEnProgreso = false; // Establecer la bandera de movimiento en falso
+      digitalWrite(T1, LOW);
+      digitalWrite(T2, LOW);
+    }
+  // Funciones de acción de piso
+    void accionP1() {
+      apagartodos();
+      if (pisoactual == 0) {
+        parpadeoverde();
+        digitalWrite(LV, HIGH);
+        }
+      else {
+        while (digitalRead(S1) != LOW) {
+          parpadeotodos();
+          bajar();
+        }
+        detener();
+        apagartodos();
+        digitalWrite(LV, HIGH);
+        pisoactual = 0;
+      }
+    }
+    void accionP2() {
+      apagartodos();
+      if (pisoactual == 1) {
+        parpadeoamarillo();
+        digitalWrite(LA, HIGH);
+      }
+      else if (pisoactual == 2) {
+        while (digitalRead(S2) != LOW) {
+          parpadeotodos();
+          bajar();
+        }
+        detener();
+        apagartodos();
+        digitalWrite(LA, HIGH);
+        pisoactual = 1;
+      } 
+      else {
+        while (digitalRead(S2) != LOW) {
+          parpadeotodos();
+          subir();
+        }
+        detener();
+        apagartodos();
+        digitalWrite(LA, HIGH);
+        pisoactual = 1;
+      }
+    }
+    void accionP3() {
+      apagartodos();
+        if (pisoactual == 2) {
+          parpadeorojo();
+          digitalWrite(LR, HIGH);
+        } 
+        else {
+          while (digitalRead(S3) != LOW) {
+            parpadeotodos();
+            subir();
+          }
+          detener();
+          apagartodos();
+          digitalWrite(LR, HIGH);
+          pisoactual = 2;
+        }
+    }
+
+  // Funciones de control de LEDs
+    void parpadeoverde() {
+      for(int i=0; i<3; i++){
+        digitalWrite(LV, HIGH);
+        delay(200);
+        digitalWrite(LV, LOW);
+        delay(200);
+      }
+    }
+    void parpadeoamarillo() {
+      for(int i=0; i<3; i++){
+        digitalWrite(LA, HIGH);
+        delay(200);
+        digitalWrite(LA, LOW);
+        delay(200);
+      }
+    }
+    void parpadeorojo() {
+      for(int i=0; i<3; i++){
+        digitalWrite(LR, HIGH);
+        delay(300);
+        digitalWrite(LR, LOW);
+        delay(300);
+      }
+    }
+    void parpadeotodos() {
+      unsigned long tiempoActual = millis();
+      if (tiempoActual - tiempoAnterior >= 200) {
+        digitalWrite(LV, !digitalRead(LV));
+        digitalWrite(LA, !digitalRead(LA));
+        digitalWrite(LR, !digitalRead(LR));
+        // Actualizar el tiempo anterior
+        tiempoAnterior = tiempoActual;
+      }
+    }
+    void apagartodos(){
+      digitalWrite(LR, LOW);
+      digitalWrite(LA, LOW);
+      digitalWrite(LV, LOW);
+    }
+
+void setup() {
+  delay(2500);
+
+  // Configuración de botones
+    pinMode(P1, INPUT_PULLUP);
+    pinMode(P2, INPUT_PULLUP);
+    pinMode(P3, INPUT_PULLUP);
+    pinMode(CP1, INPUT_PULLUP);
+    pinMode(CP2, INPUT_PULLUP);
+    pinMode(CP3, INPUT_PULLUP);
+
+  // Configuración de sensores
+    pinMode(S1, INPUT_PULLUP);
+    pinMode(S2, INPUT_PULLUP);
+    pinMode(S3, INPUT_PULLUP);
+
+  // Configuración de LEDs
+    pinMode(LV, OUTPUT);
+    pinMode(LA, OUTPUT);
+    pinMode(LR, OUTPUT);
+
+  // Configuración de puentes H
+    pinMode(T1, OUTPUT);
+    pinMode(T2, OUTPUT);
+
+  // Detección de piso inicial
+    if (digitalRead(S1) == LOW) {
+    pisoactual = 0;
+    digitalWrite(LV, HIGH);
+    } 
+    else if (digitalRead(S2) == LOW) {
+    pisoactual = 1;
+    digitalWrite(LA, HIGH);
+    } 
+    else if (digitalRead(S3) == LOW) {
+    pisoactual = 2;
+    digitalWrite(LR, HIGH);
+    } 
+    else {
+     accionP1();
+    }
+
+}
+
+void loop() {
+  // Verificar si se presiona algún botón de piso
+  if (digitalRead(P1) == LOW || digitalRead(CP1) == LOW) {
+    accionP1();
+  }
+  else if (digitalRead(P2) == LOW || digitalRead(CP2) == LOW){
+    accionP2();
+  }
+  else if(digitalRead(P3) == LOW || digitalRead(CP3) == LOW){
+    accionP3();
+  }
+
+  // Verificar si el motor está en movimiento
+  if (movimientoEnProgreso) {
+    parpadeotodos();
+  }
+
+
+}
